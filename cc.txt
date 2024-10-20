@@ -1,0 +1,107 @@
+import os
+import time
+import pyautogui
+from pynput.keyboard import Key, Listener
+from colorama import Fore, Style, init
+import tkinter as tk
+from tkinter import ttk
+from ttkthemes import ThemedTk
+
+init()
+
+resume_key = Key.f1
+pause_key = Key.f2
+exit_key = Key.esc
+cps_key = Key.f4
+clear_screen_key = Key.f3
+
+pause = True
+running = True
+delay = 1  
+
+def on_press(key):
+    global running, pause, delay
+
+    if key == resume_key:
+        pause = False
+        print(f"{Fore.GREEN}[En cours]{Style.RESET_ALL}")
+    elif key == pause_key:
+        pause = True
+        print(f"{Fore.YELLOW}[Pause]{Style.RESET_ALL}")
+    elif key == exit_key:
+        running = False
+        print(f"{Fore.RED}[quitter]{Style.RESET_ALL}")
+    elif key == cps_key:
+        update_cps_window()
+    elif key == clear_screen_key:
+        clear_screen()
+
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print(f"{Fore.GREEN}Screen clean{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}arrêt du programme...{Style.RESET_ALL}")
+    countdown(5)
+    print(f"{Fore.GREEN}Merci d'avoir utiliser le logiciel...{Style.RESET_ALL}")
+    countdown(3)
+    os.system('cls' if os.name == 'nt' else 'clear')
+    running = False
+
+def countdown(seconds):
+    for i in range(seconds, 0, -1):
+        print(f"{Fore.YELLOW}{i}{Style.RESET_ALL}")
+        time.sleep(1)
+
+def update_cps_window():
+    def update_cps():
+        global delay
+        cps_value = cps_slider.get()
+        delay = 1 / cps_value
+        cps_label.config(text=f"Sélectionnez le CPS: {cps_value:.2f}")
+        cps_window.destroy()
+        print(f"{Fore.CYAN}[CPS Update]{Style.RESET_ALL} Nouveaux CPS: {cps_value:.2f}")
+
+    cps_window = ThemedTk(theme="adapta")
+    cps_window.title("Modifier CPS")
+    cps_window.geometry("300x150")
+
+    cps_label = ttk.Label(cps_window, text=f"Sélectionnez le CPS: {1.00:.2f}")
+    cps_label.pack(pady=10)
+
+    cps_slider = ttk.Scale(cps_window, from_=1, to=100, orient=tk.HORIZONTAL, length=200, variable=tk.DoubleVar(value=1))
+    cps_slider.pack(pady=10)
+
+    update_button = ttk.Button(cps_window, text="Mettre à jour", command=update_cps)
+    update_button.pack(pady=10)
+
+    def update_label():
+        current_cps = cps_slider.get()
+        cps_label.config(text=f"Sélectionnez le CPS: {current_cps:.2f}")
+        cps_window.after(1000, update_label)
+
+    cps_window.after(100, update_label)  # Appel initial et mise à jour périodique de l'étiquette
+
+    cps_window.mainloop()
+
+def display_controls():
+    print(f"{Fore.MAGENTA}// AutoClicker Dev : clément{Style.RESET_ALL}")
+    print(f"{Fore.MAGENTA}// - Controls:{Style.RESET_ALL}")
+    print(f"\t {Fore.GREEN}F1 = reprendre{Style.RESET_ALL}")
+    print(f"\t {Fore.YELLOW}F2 = Pause{Style.RESET_ALL}")
+    print(f"\t {Fore.RED}F3 = quitter{Style.RESET_ALL}")
+    print(f"\t {Fore.CYAN}F4 = changer CPS{Style.RESET_ALL}")
+    print("-----------------------------------------------------")
+    print(f'Appuyer {Fore.GREEN}F1{Style.RESET_ALL} pour start ...')
+
+def main():
+    lis = Listener(on_press=on_press)
+    lis.start()
+
+    display_controls()
+    while running: 
+        if not pause:
+            pyautogui.click(pyautogui.position())
+            time.sleep(delay)
+    lis.stop()
+
+if __name__ == "__main__":
+    main()
